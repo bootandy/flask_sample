@@ -4,52 +4,46 @@ import sqlite3
 from flask import abort, Flask, request
 
 app = Flask(__name__)
-app.config['DATABASE'] = 'docs'
+app.config['DATABASE'] = 'ref.db'
 
-INSERT_SQL = 'insert into documents (title, content) values (:title, :content)'
-SELECT_ALL_SQL = 'select distinct(title) from documents'
-SELECT_EXACT_DOC = 'select content from documents where title = :title order by create_time desc limit 1'
-SELECT_EXACT_DOC_BY_TIME = 'select content from documents where title = :title and create_time = :create_time'
-SELECT_BY_TITLE = 'select create_time from documents where title = :title'
-
-
-@app.route('/documents')
-def list_all_documents():
-    return '\n'.join([user[0] for user in _query_db(SELECT_ALL_SQL)])
+INSERT_SQL = 'insert into referer (domain, date, creative_size) values (:domain, :date, :creative_size)'
+SELECT_ALL_FOR_DOMAIN = 'select domain, date, creative_size from referer where domain = :domain order by date'
+SELECT_HISTORY = 'select domain, count(domain) from referer group by domain'
+SELECT_CREATIVE_SIZES = 'select domain, creative_size, count(*) from referer group by domain, creative_size'
 
 
-@app.route('/documents/<title>')
-def list_document_revisions(title):
-    revivisons = [user[0] for user in _query_db(SELECT_BY_TITLE , {'title': title})]
-    if revivisons:
-        return "Versions for document with title %s:\n%s" % (title, '\n'.join(revivisons))
-    abort(404)
+@app.route('/get/<domain>')
+def view_referer(domain):
+    return '\n'.join([' '.join(row) for row in _query_db(SELECT_ALL_FOR_DOMAIN, {'domain': domain})])
 
 
-@app.route('/documents/<title>/<timestamp>')
-def get_document_at_time(title, timestamp):
-    content = _query_db(SELECT_EXACT_DOC_BY_TIME, {'title': title, 'create_time': timestamp}, one=True)
-    if content is not None:
-        return content
-    abort(404)
+@app.route('/history')
+def view_history():
+    return '\n'.join([' '.join(map(str, row)) for row in _query_db(SELECT_HISTORY)])
 
 
-@app.route('/documents/<title>/latest')
-def get_latest_document(title):
-    content = _query_db(SELECT_EXACT_DOC, {'title': title}, one=True)
-    if content is not None:
-        return content
-    abort(404)
+@app.route('/creative_sizes')
+def view_creative_sizes():
+    return '\n'.join([' '.join(map(str, row)) for row in _query_db(SELECT_CREATIVE_SIZES)])
 
 
-@app.route('/documents/<title>', methods=['POST'])
-def post_to_db(title):
+@app.route('/new_data', methods=['POST'])
+def post_to_db():
     data_dict = request.get_json() or {}
-    content = data_dict.get("content")
-    if content:
-        _get_db(INSERT_SQL, {'title': title, 'content': content})
+    ref = data_dict.get("headers", {}).get("Referer")
+    date = data_dict.get("date")
+    creative_size = data_dict.get("creative_size")
+    if not ref:
+        abort(400, "No referer")
+    if not date:
+        abort(400, "No date")
+    if not creative_size:
+        abort(400, "No creative_size")
+
+    if ref and date and creative_size:
+        _get_db(INSERT_SQL, {'domain': ref, 'date': date, 'creative_size': creative_size})
         return "Data inserted"
-    abort(400, "No insert: No content passed in")
+    abort(400, "Failed to insert")
 
 
 def _set_up_db(db):

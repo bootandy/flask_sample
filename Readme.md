@@ -1,15 +1,29 @@
-# A simple Flask app. With tests.
+# Sample code
 
-# To run:
- * pip install -r requirements.txt
- * FLASK_DEBUG=1 FLASK_APP=web.py flask run
+Flask app using a sqlite DB store. For serious use please use Postgres not sqlite.
 
-# To run tests:
-    py.test tests.py
+The data in this example is *horrible*. Of the 1000 sample input lines, only 4 are valid.
+For instance: Run this grep looking for creative-size:
 
-## To use:
- * curl -X POST -H "Content-Type: application/json" -d '{"content": "sdfsad"}'   http://127.0.0.1:5000/documents/nw
- * curl http://127.0.0.1:5000/documents
+'
+$ grep creative impressions-shortlist| wc -l                                                                                     [11:46:02]
+4
+'
 
- Note: to curl the url /documents/$NAME/$TIME the space in $TIME needs to be replaced with the url enocded
-space: %20
+I do not feel comfortable furthering this task or writing tests when the sample data is this
+poor because I do not know if I am working with the correct data
+
+## To run
+
+* pip install -r requirements.txt
+* FLASK_DEBUG=1 FLASK_APP=web.py flask run
+
+## To insert data
+
+* python populate.py
+
+### To use manually
+
+* curl -X POST -H "Content-Type: application/json" -d '{"headers":{"Referer": "333"}, "date":"2015-06-13 09:19:58", "creative_size": "60x600" }'   http://127.0.0.1:5000/new_data
+* curl http://127.0.0.1:5000/history
+* curl http://127.0.0.1:5000/creative_sizes

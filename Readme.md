@@ -5,10 +5,9 @@ Flask app using a sqlite DB store. For serious use please use Postgres not sqlit
 The data in this example is *horrible*. Of the 1000 sample input lines, only 4 are valid.
 For instance: Run this grep looking for creative-size:
 
-'
 $ grep creative impressions-shortlist| wc -l                                                                                     
 4
-'
+
 
 I do not feel comfortable furthering this task or writing tests when the sample data is this
 poor, because I do not know if I have misunderstood the task or if I am even working with the correct data
